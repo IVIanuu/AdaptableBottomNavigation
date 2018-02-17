@@ -26,41 +26,68 @@ import android.view.MenuItem
 abstract class BottomNavigationAdapter(
     private val fm: FragmentManager,
     private val containerId: Int,
-    private val retainFragments: Boolean = false
+    private val retainMode: RetainMode = RetainMode.NONE
 )
 {
 
     fun setCurrentItem(item: MenuItem) {
-        if (retainFragments) {
-            val oldFragment: Fragment? = fm.findFragmentById(containerId)
-
-            // no op
-            if (oldFragment?.tag == getFragmentTag(item)) return
-
-            val transaction = fm.beginTransaction()
-
-            // detach the old fragment
-            if (oldFragment != null) {
-                transaction.detach(oldFragment)
+        val transaction = fm.beginTransaction()
+        when(retainMode) {
+            RetainMode.NONE -> {
+                d { "swap fragments" }
+                // just swap the current fragment with a new one
+                val fragment = createFragment(item)
+                transaction.replace(containerId, fragment, getFragmentTag(item))
             }
+            RetainMode.RETAIN_FRAGMENTS -> {
+                val oldFragment: Fragment? = fm.findFragmentById(containerId)
 
-            var newFragment = fm.findFragmentByTag(getFragmentTag(item))
-            if (newFragment != null) {
-                // re-attach new fragment
-                transaction.attach(newFragment)
-            } else {
-                newFragment = createFragment(item)
-                // add new fragment for the first time
-                transaction.add(containerId, newFragment, getFragmentTag(item))
+                // no op
+                if (oldFragment?.tag == getFragmentTag(item)) return
+
+                // detach old fragment
+                if (oldFragment != null) {
+                    d { "detach old fragment ${oldFragment.tag}" }
+                    transaction.detach(oldFragment)
+                }
+
+                var newFragment = fm.findFragmentByTag(getFragmentTag(item))
+                if (newFragment != null) {
+                    d { "attach new fragment ${newFragment.tag}" }
+                    transaction.attach(newFragment)
+                } else {
+                    newFragment = createFragment(item)
+                    d { "add new fragment ${getFragmentTag(item)}" }
+                    // add new fragment for the first time
+                    transaction.add(containerId, newFragment, getFragmentTag(item))
+                }
             }
+            RetainMode.RETAIN_FRAGMENTS_AND_VIEWS -> {
+                val newTag = getFragmentTag(item)
 
-            transaction.commitNowAllowingStateLoss()
-        } else {
-            val fragment = createFragment(item)
-            fm.beginTransaction()
-                .replace(containerId, fragment, getFragmentTag(item))
-                .commitNowAllowingStateLoss()
+                // hide all fragments
+                fm.fragments
+                    .filter { it.tag != newTag }
+                    .forEach {
+                        d { "hide old fragment ${it.tag}" }
+                        transaction.hide(it)
+                    }
+
+                var newFragment = fm.findFragmentByTag(getFragmentTag(item))
+                if (newFragment != null) {
+                    // show new fragment
+                    d { "show new fragment ${newFragment.tag}" }
+                    transaction.show(newFragment)
+                } else {
+                    newFragment = createFragment(item)
+                    d { "add new fragment ${getFragmentTag(item)}" }
+                    // add new fragment for the first time
+                    transaction.add(containerId, newFragment, getFragmentTag(item))
+                }
+            }
         }
+
+        transaction.commitNowAllowingStateLoss()
     }
 
     fun getCurrentFragment(): Fragment? {
@@ -71,5 +98,9 @@ abstract class BottomNavigationAdapter(
 
     protected open fun getFragmentTag(item: MenuItem): String {
         return item.itemId.toString()
+    }
+
+    enum class RetainMode {
+        NONE, RETAIN_FRAGMENTS, RETAIN_FRAGMENTS_AND_VIEWS
     }
 }

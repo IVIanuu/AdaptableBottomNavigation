@@ -22,12 +22,13 @@ import android.os.Parcelable
 import android.support.design.widget.BottomNavigationView
 import android.support.v4.view.ViewPager
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MenuItem
 import kotlinx.android.parcel.Parcelize
 
-/*fun Any.d(message: () -> String) {
+fun Any.d(message: () -> String) {
     Log.d(this::class.java.simpleName, message())
-}*/
+}
 
 /**
  * A [BottomNavigationView] which can be used with a [ViewPager]
