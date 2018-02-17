@@ -30,20 +30,21 @@ abstract class BottomNavigationAdapter(
 )
 {
 
+    private var currentFragmentTag: String? = null
+
     fun setCurrentItem(item: MenuItem) {
+        val newFragmentTag = getFragmentTag(item)
+
         val transaction = fm.beginTransaction()
         when(mode) {
             Mode.REPLACE -> {
                 d { "swap fragments" }
                 // just swap the current fragment with a new one
                 val fragment = createFragment(item)
-                transaction.replace(containerId, fragment, getFragmentTag(item))
+                transaction.replace(containerId, fragment, newFragmentTag)
             }
             Mode.ATTACH_DETACH -> {
                 val oldFragment: Fragment? = fm.findFragmentById(containerId)
-
-                // no op
-                if (oldFragment?.tag == getFragmentTag(item)) return
 
                 // detach old fragment
                 if (oldFragment != null) {
@@ -51,48 +52,47 @@ abstract class BottomNavigationAdapter(
                     transaction.detach(oldFragment)
                 }
 
-                var newFragment = fm.findFragmentByTag(getFragmentTag(item))
+                var newFragment = fm.findFragmentByTag(newFragmentTag)
                 if (newFragment != null) {
                     // re attach new fragment
                     d { "attach new fragment ${newFragment.tag}" }
                     transaction.attach(newFragment)
                 } else {
                     newFragment = createFragment(item)
-                    d { "add new fragment ${getFragmentTag(item)}" }
+                    d { "add new fragment $newFragment" }
                     // add new fragment for the first time
-                    transaction.add(containerId, newFragment, getFragmentTag(item))
+                    transaction.add(containerId, newFragment, newFragmentTag)
                 }
             }
             Mode.SHOW_HIDE -> {
-                val newTag = getFragmentTag(item)
-
                 // hide all fragments except the new one
                 fm.fragments
-                    .filter { it.tag != newTag }
+                    .filter { it.tag != newFragmentTag }
                     .forEach {
                         d { "hide old fragment ${it.tag}" }
                         transaction.hide(it)
                     }
 
-                var newFragment = fm.findFragmentByTag(getFragmentTag(item))
+                var newFragment = fm.findFragmentByTag(newFragmentTag)
                 if (newFragment != null) {
                     // show new fragment
                     d { "show new fragment ${newFragment.tag}" }
                     transaction.show(newFragment)
                 } else {
                     newFragment = createFragment(item)
-                    d { "add new fragment ${getFragmentTag(item)}" }
+                    d { "add new fragment $newFragment" }
                     // add new fragment for the first time
-                    transaction.add(containerId, newFragment, getFragmentTag(item))
+                    transaction.add(containerId, newFragment, newFragmentTag)
                 }
             }
         }
 
         transaction.commitNowAllowingStateLoss()
+        currentFragmentTag = newFragmentTag
     }
 
     fun getCurrentFragment(): Fragment? {
-        return fm.findFragmentById(containerId)
+        return fm.findFragmentByTag(currentFragmentTag)
     }
 
     protected abstract fun createFragment(item: MenuItem): Fragment

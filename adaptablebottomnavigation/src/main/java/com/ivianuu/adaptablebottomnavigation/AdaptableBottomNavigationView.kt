@@ -54,6 +54,7 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
 
     override fun onSaveInstanceState(): Parcelable {
         val superState = super.onSaveInstanceState()
+
         return SavedState(selectedItem, superState)
     }
 
@@ -66,14 +67,16 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
         super.onRestoreInstanceState(state.superState)
 
         selectedItem = state.selectedItem
-        currentAdapterSelectedListener?.restore(selectedItem)
+        currentAdapterSelectedListener?.setInitialItem(selectedItem)
     }
     
     fun setAdapter(adapter: BottomNavigationAdapter?) {
         currentAdapterSelectedListener = null
 
         if (adapter != null) {
-            currentAdapterSelectedListener = AdapterOnItemSelectedListener(adapter)
+            currentAdapterSelectedListener = AdapterOnItemSelectedListener(adapter).apply {
+                setInitialItem(selectedItem)
+            }
             super.setOnNavigationItemSelectedListener(currentAdapterSelectedListener)
         }
     }
@@ -82,10 +85,6 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
         private val adapter: BottomNavigationAdapter
     ) : BottomNavigationView.OnNavigationItemSelectedListener {
 
-        init {
-            restore(selectedItem)
-        }
-
         override fun onNavigationItemSelected(item: MenuItem): Boolean {
             selectedItem = item.itemId
             adapter.setCurrentItem(item)
@@ -93,7 +92,7 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
             return true
         }
 
-        fun restore(selectedItem: Int) {
+        fun setInitialItem(selectedItem: Int) {
             // set initial item
             menu.findItem(selectedItem)?.let { adapter.setCurrentItem(it) }
         }
