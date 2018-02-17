@@ -52,7 +52,7 @@ class BottomNavigationFragment : Fragment() {
 }
 
 class BottomNavAdapter(fm: FragmentManager) : BottomNavigationAdapter(
-    fm, R.id.bottom_navigation_container, RetainMode.RETAIN_FRAGMENTS_AND_VIEWS) {
+    fm, R.id.bottom_navigation_container) {
 
     override fun createFragment(item: MenuItem): Fragment {
         return when(item.itemId) {

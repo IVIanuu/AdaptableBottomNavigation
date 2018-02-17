@@ -26,20 +26,20 @@ import android.view.MenuItem
 abstract class BottomNavigationAdapter(
     private val fm: FragmentManager,
     private val containerId: Int,
-    private val retainMode: RetainMode = RetainMode.NONE
+    private val mode: Mode = Mode.REPLACE
 )
 {
 
     fun setCurrentItem(item: MenuItem) {
         val transaction = fm.beginTransaction()
-        when(retainMode) {
-            RetainMode.NONE -> {
+        when(mode) {
+            Mode.REPLACE -> {
                 d { "swap fragments" }
                 // just swap the current fragment with a new one
                 val fragment = createFragment(item)
                 transaction.replace(containerId, fragment, getFragmentTag(item))
             }
-            RetainMode.RETAIN_FRAGMENTS -> {
+            Mode.ATTACH_DETACH -> {
                 val oldFragment: Fragment? = fm.findFragmentById(containerId)
 
                 // no op
@@ -53,6 +53,7 @@ abstract class BottomNavigationAdapter(
 
                 var newFragment = fm.findFragmentByTag(getFragmentTag(item))
                 if (newFragment != null) {
+                    // re attach new fragment
                     d { "attach new fragment ${newFragment.tag}" }
                     transaction.attach(newFragment)
                 } else {
@@ -62,10 +63,10 @@ abstract class BottomNavigationAdapter(
                     transaction.add(containerId, newFragment, getFragmentTag(item))
                 }
             }
-            RetainMode.RETAIN_FRAGMENTS_AND_VIEWS -> {
+            Mode.SHOW_HIDE -> {
                 val newTag = getFragmentTag(item)
 
-                // hide all fragments
+                // hide all fragments except the new one
                 fm.fragments
                     .filter { it.tag != newTag }
                     .forEach {
@@ -100,7 +101,7 @@ abstract class BottomNavigationAdapter(
         return item.itemId.toString()
     }
 
-    enum class RetainMode {
-        NONE, RETAIN_FRAGMENTS, RETAIN_FRAGMENTS_AND_VIEWS
+    enum class Mode {
+        REPLACE, ATTACH_DETACH, SHOW_HIDE
     }
 }
