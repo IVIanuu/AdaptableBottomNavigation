@@ -25,6 +25,9 @@ import android.util.AttributeSet
 import android.view.MenuItem
 import kotlinx.android.parcel.Parcelize
 
+/*fun Any.d(message: () -> String) {
+    Log.d(this::class.java.simpleName, message())
+}*/
 
 /**
  * A [BottomNavigationView] which can be used with a [ViewPager]
@@ -49,10 +52,6 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
         viewChangeListener = listener
     }
 
-    override fun inflateMenu(resId: Int) {
-        super.inflateMenu(resId)
-    }
-
     override fun onSaveInstanceState(): Parcelable {
         val superState = super.onSaveInstanceState()
         return SavedState(selectedItem, superState)
@@ -67,7 +66,7 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
         super.onRestoreInstanceState(state.superState)
 
         selectedItem = state.selectedItem
-        menu.findItem(selectedItem)?.isChecked = true
+        currentAdapterSelectedListener?.restore(selectedItem)
     }
     
     fun setAdapter(adapter: BottomNavigationAdapter?) {
@@ -84,11 +83,7 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
     ) : BottomNavigationView.OnNavigationItemSelectedListener {
 
         init {
-            // set initial item
-            val item = menu.findItem(selectedItem)
-            if (item != null) {
-                adapter.setCurrentItem(item)
-            }
+            restore(selectedItem)
         }
 
         override fun onNavigationItemSelected(item: MenuItem): Boolean {
@@ -97,11 +92,16 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
             viewChangeListener?.onNavigationItemSelected(item)
             return true
         }
+
+        fun restore(selectedItem: Int) {
+            // set initial item
+            menu.findItem(selectedItem)?.let { adapter.setCurrentItem(it) }
+        }
     }
 
     @SuppressLint("ParcelCreator")
     @Parcelize
-    private class SavedState(
+    private data class SavedState(
         val selectedItem: Int,
         val superState: Parcelable?
     ) : Parcelable
