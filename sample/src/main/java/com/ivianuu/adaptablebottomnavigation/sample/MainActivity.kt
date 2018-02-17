@@ -1,14 +1,16 @@
 package com.ivianuu.adaptablebottomnavigation.sample
 
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
-import android.support.v4.app.FragmentStatePagerAdapter
+import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
+import com.ivianuu.adaptablebottomnavigation.BottomNavigationAdapter
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_sample.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,8 +18,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        view_pager.adapter = MainAdapter(supportFragmentManager)
-        bottom_bar.setupWithViewPager(view_pager)
+        val adapter = MainAdapter(supportFragmentManager)
+        bottom_bar.setAdapter(adapter)
 
         bottom_bar.setOnNavigationItemSelectedListener {
             Log.d("Clicks", it.toString())
@@ -26,19 +28,23 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-class MainAdapter(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
+class MainAdapter(fm: FragmentManager) : BottomNavigationAdapter(fm, R.id.container, true) {
 
-    override fun getItem(position: Int) = SampleFragment().apply {
-        arguments = Bundle().apply {
-            putInt("page", position + 1)
+    override fun createFragment(item: MenuItem): Fragment {
+        return when(item.itemId) {
+            R.id.one -> FragmentOne()
+            R.id.two -> FragmentTwo()
+            R.id.three -> FragmentThree()
+            else -> throw IllegalArgumentException("unknown item $item")
         }
     }
 
-    override fun getCount() = 3
-
+    override fun getFragmentTag(item: MenuItem): String {
+        return item.title.toString()
+    }
 }
 
-class SampleFragment : Fragment() {
+abstract class BaseFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,8 +54,17 @@ class SampleFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_sample, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        page.text = arguments!!.getInt("page").toString()
-    }
+    abstract val title: String
+}
+
+class FragmentOne : BaseFragment() {
+    override val title: String = "One"
+}
+
+class FragmentTwo : BaseFragment() {
+    override val title: String = "Two"
+}
+
+class FragmentThree : BaseFragment() {
+    override val title: String = "Three"
 }

@@ -18,12 +18,13 @@ package com.ivianuu.adaptablebottomnavigation
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.support.design.widget.BottomNavigationView
-import android.util.AttributeSet
 import android.os.Parcelable
+import android.support.design.widget.BottomNavigationView
 import android.support.v4.view.ViewPager
+import android.util.AttributeSet
 import android.view.MenuItem
 import kotlinx.android.parcel.Parcelize
+
 
 /**
  * A [BottomNavigationView] which can be used with a [ViewPager]
@@ -34,9 +35,13 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : BottomNavigationView(context, attrs, defStyleAttr) {
 
-    private var currentViewSwapperSelectedListener: ViewSwapperOnItemSelectedListener? = null
+    private var currentAdapterSelectedListener: AdapterOnItemSelectedListener? = null
     private var viewChangeListener: BottomNavigationView.OnNavigationItemSelectedListener? = null
-    private var selectedPosition = 0
+    private var selectedItem = 0
+
+    init {
+        selectedItem = selectedItemId
+    }
 
     override fun setOnNavigationItemSelectedListener(
         listener: BottomNavigationView.OnNavigationItemSelectedListener?
@@ -44,9 +49,13 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
         viewChangeListener = listener
     }
 
+    override fun inflateMenu(resId: Int) {
+        super.inflateMenu(resId)
+    }
+
     override fun onSaveInstanceState(): Parcelable {
         val superState = super.onSaveInstanceState()
-        return SavedState(selectedPosition, superState)
+        return SavedState(selectedItem, superState)
     }
 
     override fun onRestoreInstanceState(state: Parcelable?) {
@@ -57,34 +66,35 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
 
         super.onRestoreInstanceState(state.superState)
 
-        selectedPosition = state.selectedPosition
-        menu.getItem(selectedPosition).isChecked = true
+        selectedItem = state.selectedItem
+        menu.findItem(selectedItem)?.isChecked = true
     }
+    
+    fun setAdapter(adapter: BottomNavigationAdapter?) {
+        currentAdapterSelectedListener = null
 
-    fun setupWithViewPager(viewPager: ViewPager?) {
-        currentViewSwapperSelectedListener = null
-
-        if (viewPager != null) {
-            currentViewSwapperSelectedListener = ViewSwapperOnItemSelectedListener(viewPager)
-            super.setOnNavigationItemSelectedListener(currentViewSwapperSelectedListener)
+        if (adapter != null) {
+            currentAdapterSelectedListener = AdapterOnItemSelectedListener(adapter)
+            super.setOnNavigationItemSelectedListener(currentAdapterSelectedListener)
         }
     }
 
-    private inner class ViewSwapperOnItemSelectedListener(
-        private val viewPager: ViewPager
+    private inner class AdapterOnItemSelectedListener(
+        private val adapter: BottomNavigationAdapter
     ) : BottomNavigationView.OnNavigationItemSelectedListener {
 
-        override fun onNavigationItemSelected(item: MenuItem): Boolean {
-            for (i in 0 until menu.size()) {
-                if (menu.getItem(i).itemId == item.itemId) {
-                    selectedPosition = i
-                    viewPager.currentItem = selectedPosition
-                    break
-                }
+        init {
+            // set initial item
+            val item = menu.findItem(selectedItem)
+            if (item != null) {
+                adapter.setCurrentItem(item)
             }
+        }
 
+        override fun onNavigationItemSelected(item: MenuItem): Boolean {
+            selectedItem = item.itemId
+            adapter.setCurrentItem(item)
             viewChangeListener?.onNavigationItemSelected(item)
-
             return true
         }
     }
@@ -92,7 +102,7 @@ class AdaptableBottomNavigationView @JvmOverloads constructor(
     @SuppressLint("ParcelCreator")
     @Parcelize
     private class SavedState(
-        val selectedPosition: Int,
+        val selectedItem: Int,
         val superState: Parcelable?
     ) : Parcelable
 }
