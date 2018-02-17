@@ -38,7 +38,6 @@ abstract class BottomNavigationAdapter(
         val transaction = fm.beginTransaction()
         when(mode) {
             Mode.REPLACE -> {
-                d { "swap fragments" }
                 // just swap the current fragment with a new one
                 val fragment = createFragment(item)
                 transaction.replace(containerId, fragment, newFragmentTag)
@@ -48,18 +47,15 @@ abstract class BottomNavigationAdapter(
 
                 // detach old fragment
                 if (oldFragment != null) {
-                    d { "detach old fragment ${oldFragment.tag}" }
                     transaction.detach(oldFragment)
                 }
 
                 var newFragment = fm.findFragmentByTag(newFragmentTag)
                 if (newFragment != null) {
                     // re attach new fragment
-                    d { "attach new fragment ${newFragment.tag}" }
                     transaction.attach(newFragment)
                 } else {
                     newFragment = createFragment(item)
-                    d { "add new fragment $newFragment" }
                     // add new fragment for the first time
                     transaction.add(containerId, newFragment, newFragmentTag)
                 }
@@ -68,19 +64,14 @@ abstract class BottomNavigationAdapter(
                 // hide all fragments except the new one
                 fm.fragments
                     .filter { it.tag != newFragmentTag }
-                    .forEach {
-                        d { "hide old fragment ${it.tag}" }
-                        transaction.hide(it)
-                    }
+                    .forEach { transaction.hide(it) }
 
                 var newFragment = fm.findFragmentByTag(newFragmentTag)
                 if (newFragment != null) {
                     // show new fragment
-                    d { "show new fragment ${newFragment.tag}" }
                     transaction.show(newFragment)
                 } else {
                     newFragment = createFragment(item)
-                    d { "add new fragment $newFragment" }
                     // add new fragment for the first time
                     transaction.add(containerId, newFragment, newFragmentTag)
                 }

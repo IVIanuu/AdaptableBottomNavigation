@@ -25,10 +25,6 @@ import android.util.AttributeSet
 import android.view.MenuItem
 import kotlinx.android.parcel.Parcelize
 
-fun Any.d(message: () -> String) {
-//    Log.d(this::class.java.simpleName, message())
-}
-
 /**
  * A [BottomNavigationView] which can be used with a [ViewPager]
  */
